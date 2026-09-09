@@ -1,3 +1,4 @@
+
 # 📬 Module 6: Messaging Systems, Event Streams & Asynchronous Processing
 
 > **Core Philosophy:** *Synchronous calls create brittle distributed chains where the slowest dependency dictates overall latency. Asynchronous messaging decouples producers from consumers, flattens traffic spikes, and enforces fault isolation.*
@@ -5,17 +6,18 @@
 ---
 
 ## 📌 Table of Contents
+
 1. [The Problem: Cascading Timeouts in Synchronous Calls](#1-the-problem-cascading-timeouts-in-synchronous-calls)
 2. [Point-to-Point Message Queues vs Distributed Event Streams](#2-point-to-point-message-queues-vs-distributed-event-streams)
-3. [Apache Kafka Deep Dive: Topics, Partitions, Replicas & Offsets](#3-apache-kafka-deep-dive-topics-partitions-replicas--offsets)
-4. [Kafka Consumer Groups, Rebalancing & Partition Assignment](#4-kafka-consumer-groups-rebalancing--partition-assignment)
-5. [RabbitMQ: Exchanges, Bindings & AMQP Routing Topologies](#5-rabbitmq-exchanges-bindings--amqp-routing-topologies)
-6. [Delivery Guarantees: At-Least-Once, At-Most-Once & Exactly-Once](#6-delivery-guarantees-at-least-once-at-most-once--exactly-once)
-7. [Idempotency & Deduplication Strategies in Distributed Consumers](#7-idempotency--deduplication-strategies-in-distributed-consumers)
-8. [Dead-Letter Queues (DLQ), Poison Pills & Exponential Backoff](#8-dead-letter-queues-dlq-poison-pills--exponential-backoff)
-9. [Java / Spring Boot Kafka Producer & Idempotent Consumer Implementation](#9-java--spring-boot-kafka-producer--idempotent-consumer-implementation)
+3. [Apache Kafka Deep Dive: Topics, Partitions, Replicas &amp; Offsets](#3-apache-kafka-deep-dive-topics-partitions-replicas--offsets)
+4. [Kafka Consumer Groups, Rebalancing &amp; Partition Assignment](#4-kafka-consumer-groups-rebalancing--partition-assignment)
+5. [RabbitMQ: Exchanges, Bindings &amp; AMQP Routing Topologies](#5-rabbitmq-exchanges-bindings--amqp-routing-topologies)
+6. [Delivery Guarantees: At-Least-Once, At-Most-Once &amp; Exactly-Once](#6-delivery-guarantees-at-least-once-at-most-once--exactly-once)
+7. [Idempotency &amp; Deduplication Strategies in Distributed Consumers](#7-idempotency--deduplication-strategies-in-distributed-consumers)
+8. [Dead-Letter Queues (DLQ), Poison Pills &amp; Exponential Backoff](#8-dead-letter-queues-dlq-poison-pills--exponential-backoff)
+9. [Java / Spring Boot Kafka Producer &amp; Idempotent Consumer Implementation](#9-java--spring-boot-kafka-producer--idempotent-consumer-implementation)
 10. [Side-by-Side Message Broker Comparison Matrix](#10-side-by-side-message-broker-comparison-matrix)
-11. [Interview Rapid Q&A Checklist](#11-interview-rapid-qa-checklist)
+11. [Interview Rapid Q&amp;A Checklist](#11-interview-rapid-qa-checklist)
 
 ---
 
@@ -72,9 +74,13 @@ KAFKA TOPIC: "order-events" (3 Partitions across 3 Broker Nodes)
 │ Partition 2 (Broker 3): [Msg 0] [Msg 1] [Msg 2] [Msg 3] ... (Offset 4) │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
 1. **Partition Ordering:** Kafka guarantees strict chronological message ordering **ONLY within a partition**, never across different partitions!
 2. **Partition Key:** Producers supply a key (e.g. `order_id` or `user_id`). Kafka hashes:
-   $$	ext{partition} = 	ext{murmur2}(	ext{key}) \pmod{	ext{numPartitions}}$$
+   $$
+   ext{partition} = 	ext{murmur2}(	ext{key}) \pmod{	ext{numPartitions}}
+   $$
+
    This guarantees all events for a specific order land on the exact same partition in order!
 3. **High-Throughput Secret (Zero-Copy):** Kafka uses the Linux `sendfile()` system call to stream bytes directly from disk cache to the network socket, completely bypassing JVM user-space memory!
 
@@ -96,7 +102,8 @@ CONSUMER GROUP: "order-fulfillment-group"
 ## 5. Delivery Guarantees: At-Least-Once vs Exactly-Once
 
 - **At-Most-Once:** Consumer commits offset *before* processing message. If processing crashes, message is permanently lost.
-- **At-Least-Once (Standard):** Consumer commits offset *after* successfully processing message. If network drops during ACK, broker redelivers message $ightarrow$ **Consumer must be idempotent!**
+- **At-Least-Once (Standard):** Consumer commits offset *after* successfully processing message. If network drops during ACK, broker redelivers message $
+  ightarrow$ **Consumer must be idempotent!**
 - **Exactly-Once (EOS):** Kafka Transactions coordinate producer writes across multiple topics and offsets atomically (`read-process-write`).
 
 ---
@@ -166,17 +173,18 @@ public class OrderFulfillmentConsumer {
 
 ## 8. Side-by-Side Message Broker Comparison Matrix
 
-| Metric | Apache Kafka | RabbitMQ | AWS SQS |
-| :--- | :--- | :--- | :--- |
-| **Architecture** | Distributed Commit Log | AMQP Broker with Smart Queues | Managed Cloud Distributed Queue |
-| **Consumption Model**| Pull (Consumer pulls batches) | Push (Broker pushes to workers) | Pull (HTTP Long-Polling) |
-| **Max Throughput** | Millions of messages/sec | 50,000 - 100,000 msgs/sec | Auto-scaling managed |
-| **Message Ordering** | Strict per partition | FIFO queues | FIFO queues (3,000 QPS) |
-| **Data Retention** | Configurable (Days / Forever) | Deleted immediately on ACK | 1 to 14 days |
-| **Replayability** | **Yes (rewind offset)** | No | No |
+| Metric                      | Apache Kafka                  | RabbitMQ                        | AWS SQS                         |
+| :-------------------------- | :---------------------------- | :------------------------------ | :------------------------------ |
+| **Architecture**      | Distributed Commit Log        | AMQP Broker with Smart Queues   | Managed Cloud Distributed Queue |
+| **Consumption Model** | Pull (Consumer pulls batches) | Push (Broker pushes to workers) | Pull (HTTP Long-Polling)        |
+| **Max Throughput**    | Millions of messages/sec      | 50,000 - 100,000 msgs/sec       | Auto-scaling managed            |
+| **Message Ordering**  | Strict per partition          | FIFO queues                     | FIFO queues (3,000 QPS)         |
+| **Data Retention**    | Configurable (Days / Forever) | Deleted immediately on ACK      | 1 to 14 days                    |
+| **Replayability**     | **Yes (rewind offset)** | No                              | No                              |
 
 ---
 
 ## 9. Interview Rapid Q&A Checklist
+
 - *What is Kafka Rebalancing?* (When a consumer node joins or dies, the group coordinator reassigns partitions across the remaining healthy consumer instances).
 - *What is Consumer Lag?* (The delta between the latest producer offset in a partition and the consumer's committed offset; a rising lag indicates workers are overloaded).
