@@ -5,24 +5,26 @@
 ---
 
 ## 📌 Table of Contents
+
 1. [The Problem: What Happens When Scale Breaks?](#1-the-problem-what-happens-when-scale-breaks)
 2. [HLD vs LLD: The Architectural Spectrum](#2-hld-vs-lld-the-architectural-spectrum)
-3. [The Complete Request Lifecycle (From Click to Database & Back)](#3-the-complete-request-lifecycle-from-click-to-database--back)
-4. [Client-Server Evolution: Peer-to-Peer, Client-Server & Microservices](#4-client-server-evolution-peer-to-peer-client-server--microservices)
+3. [The Complete Request Lifecycle (From Click to Database &amp; Back)](#3-the-complete-request-lifecycle-from-click-to-database--back)
+4. [Client-Server Evolution: Peer-to-Peer, Client-Server &amp; Microservices](#4-client-server-evolution-peer-to-peer-client-server--microservices)
 5. [Monolith vs Microservices: Deep Architectural Decomposition](#5-monolith-vs-microservices-deep-architectural-decomposition)
 6. [Stateless vs Stateful Services: Surviving Machine Failures](#6-stateless-vs-stateful-services-surviving-machine-failures)
 7. [Synchronous vs Asynchronous Communication Models](#7-synchronous-vs-asynchronous-communication-models)
 8. [Requirements Engineering: Functional vs Non-Functional (NFRs)](#8-requirements-engineering-functional-vs-non-functional-nfrs)
-9. [Capacity Estimation & Back-of-the-Envelope Calculations](#9-capacity-estimation--back-of-the-envelope-calculations)
+9. [Capacity Estimation &amp; Back-of-the-Envelope Calculations](#9-capacity-estimation--back-of-the-envelope-calculations)
 10. [End-to-End Java / Spring Boot Architecture Implementation](#10-end-to-end-java--spring-boot-architecture-implementation)
 11. [Side-by-Side Trade-off Comparison Table](#11-side-by-side-trade-off-comparison-table)
-12. [Interview Framework & Senior Architect Mental Model](#12-interview-framework--senior-architect-mental-model)
+12. [Interview Framework &amp; Senior Architect Mental Model](#12-interview-framework--senior-architect-mental-model)
 
 ---
 
 ## 1. The Problem: What Happens When Scale Breaks?
 
 ### Real-World Domain Example: The Flash-Sale Meltdown 💥
+
 Imagine an e-commerce platform built as a simple single-server application. At 12:00:00 PM, a new flagship product launches. 500,000 active shoppers hit `POST /orders` within 10 seconds.
 
 ```
@@ -38,6 +40,7 @@ Imagine an e-commerce platform built as a simple single-server application. At 1
 ```
 
 ### The Root Failures of Naive Systems:
+
 1. **Vertical Ceilings:** A single physical box has fixed RAM, CPU sockets, and network interface card (NIC) throughput.
 2. **Coupled Failures:** A memory leak in the PDF invoice generator crashes the mission-critical checkout process.
 3. **Stateful Traps:** Storing user session data in server RAM means dying servers log out 100,000 active buyers.
@@ -107,6 +110,7 @@ Every distributed web interaction follows this comprehensive sequence of network
 ## 5. Monolith vs Microservices: Deep Architectural Decomposition
 
 ### Monolithic Architecture
+
 A single deployable unit where all domain modules (Orders, Catalog, Auth, Billing) execute within the same process and communicate via in-memory method calls.
 
 ```
@@ -121,10 +125,12 @@ A single deployable unit where all domain modules (Orders, Catalog, Auth, Billin
            ▼                  ▼                   ▼
                 [ SHARED MONOLITH DATABASE ]
 ```
+
 * **Advantages:** Zero network serialization overhead, single transaction manager (ACID), simple deployment.
 * **Disadvantages:** Single point of failure, team code conflicts, scaling requires duplicating the entire application.
 
 ### Microservices Architecture
+
 Independent autonomous services bounded by domain boundaries, each with its own isolated database. Communication happens exclusively over network APIs (REST/gRPC/Kafka).
 
 ```
@@ -133,6 +139,7 @@ Independent autonomous services bounded by domain boundaries, each with its own 
        ├──▶ [ Billing Service ]    ──▶ (Billing DB - MySQL)
        └──▶ [ Inventory Service ]  ──▶ (Inventory DB - Redis / Mongo)
 ```
+
 * **Advantages:** Independent CI/CD, technology heterogeneity (Java for transactions, Python for ML), fine-grained autoscaling.
 * **Disadvantages:** Network latency, distributed transactions (Sagas required), complex distributed observability.
 
@@ -191,6 +198,7 @@ Before drawing a single box in an interview, explicitly segregate requirements:
 ## 9. Capacity Estimation & Back-of-the-Envelope Calculations
 
 ### Master Formula Sheet
+
 ```
 1. Requests Per Second (QPS):
    QPS = (Daily Active Users × Actions per User per Day) / 86,400 seconds
@@ -206,6 +214,7 @@ Before drawing a single box in an interview, explicitly segregate requirements:
 ```
 
 ### Real Example: Designing Twitter / X Tweet Ingestion
+
 - **Assumptions:** 200 Million Daily Active Users (DAU).
 - Each user posts 2 tweets/day -> 400,000,000 tweets/day.
 - **Write QPS:** 400,000,000 / 86,400 ≈ 4,630 writes/sec. Peak QPS ≈ 4,630 × 2.5 ≈ 11,500 QPS.
@@ -223,6 +232,7 @@ Before drawing a single box in an interview, explicitly segregate requirements:
 ## 10. End-to-End Java / Spring Boot Architecture Implementation
 
 ### A. Production Stateless Controller with Jakarta Validation
+
 ```java
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -260,6 +270,7 @@ public class OrderController {
 ```
 
 ### B. Service Tier with Distributed Caching & Idempotency
+
 ```java
 @Service
 @RequiredArgsConstructor
@@ -306,14 +317,14 @@ public class OrderApplicationService {
 
 ## 11. Side-by-Side Trade-off Comparison Table
 
-| Architecture Dimension | Monolith Architecture | Microservices Architecture |
-| :--- | :--- | :--- |
-| **Development Velocity** | Extremely fast in early phase | Slower initially due to scaffolding & CI/CD |
-| **Operational Overhead** | Low (single deployment pipeline) | High (requires K8s, service mesh, OpenTelemetry) |
-| **Failure Blast Radius** | High (one memory leak kills entire app) | Low (isolated per container/pod) |
-| **Data Consistency** | Strong ACID transactions | Eventual consistency (Sagas & Compensation) |
-| **Hardware Efficiency** | Shared heap & connection pools | Extra overhead per container/JVM |
-| **Team Scalability** | Hits bottlenecks past 20 engineers | Supports 100+ engineers across domain teams |
+| Architecture Dimension         | Monolith Architecture                   | Microservices Architecture                       |
+| :----------------------------- | :-------------------------------------- | :----------------------------------------------- |
+| **Development Velocity** | Extremely fast in early phase           | Slower initially due to scaffolding & CI/CD      |
+| **Operational Overhead** | Low (single deployment pipeline)        | High (requires K8s, service mesh, OpenTelemetry) |
+| **Failure Blast Radius** | High (one memory leak kills entire app) | Low (isolated per container/pod)                 |
+| **Data Consistency**     | Strong ACID transactions                | Eventual consistency (Sagas & Compensation)      |
+| **Hardware Efficiency**  | Shared heap & connection pools          | Extra overhead per container/JVM                 |
+| **Team Scalability**     | Hits bottlenecks past 20 engineers      | Supports 100+ engineers across domain teams      |
 
 ---
 
